@@ -1,21 +1,21 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 23 10:07:18 2024
+'''
+ # @ Create Time: 2024-09-23 15:02:41.105417
+'''
 
-@author: root
-"""
+from dash import Dash, html, dcc
+import plotly.express as px
+import pandas as pd
 
-import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 
 
+app = Dash(__name__, title="performance")
 
-
+# Declare server for Heroku deployment. Needed for Procfile.
+server = app.server
 
 # Data
 data = {
@@ -28,11 +28,9 @@ tuples = [(source,target) for source, target in zip(data['Porque não efetuamos 
 datas['tuples'] = tuples
 
 
-conc = pd.read_pickle('/private/var/root/Target/Pickles/conc.pkl')
+conc = pd.read_pickle('/private/var/root/Target/Pickles/conc_2.pkl')
 df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 
-# Create Dash app
-app = dash.Dash(__name__)
 
 # Layout with a graph and a div to display hover/click info
 app.layout = html.Div([
@@ -269,16 +267,8 @@ def display_hover_data(hoverData):
     # Return an empty figure if no hover data
     return px.bar(title="Hover over a bar to see details.")
 
-# Callback for clickData
-@app.callback(
-    Output('click-output', 'children'),
-    [Input('example-graph', 'clickData')]
-)
-def display_click_data(clickData):
-    if clickData:
-        clicked_category = clickData['points'][0]['x']
-        return f'You clicked on category: {clicked_category}'
-    return "Click on a bar to select it."
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+    
