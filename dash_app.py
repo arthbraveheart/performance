@@ -25,7 +25,7 @@ db_con = s.connect('db_tubozan.db')
 data = {
     'Sector': ['Manager', 'Manager', 'Manager', 'Manager', 'Marketing', 'Marketing', 'Marketing','Vazio'],
     'Porque não efetuamos o Pedido?': ['Preço', 'Atendimento', 'Fidelidade com concorrente', 'Pazo de entrega', 
-              'Inicio de relacionamento', 'Variedade de produtos', 'Qualidade do produto','vazio']
+              'Inicio de Relacionamento', 'Variedade de produtos', 'Qualidade do produto','vazio']
 }
 datas = pd.DataFrame(data)
 tuples = [(source,target) for source, target in zip(data['Porque não efetuamos o Pedido?'],data['Sector'])]
