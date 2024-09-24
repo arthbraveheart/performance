@@ -40,6 +40,7 @@ df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 app.layout = html.Div([
     dcc.Graph(
         id='example-graph',
+
         figure=px.bar(df, x="Nome do Representante", y="count", color='Bluered'),
     ),
     html.Div([dcc.Graph(id='output_1'),
