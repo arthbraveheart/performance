@@ -40,7 +40,7 @@ df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 app.layout = html.Div([
     dcc.Graph(
         id='example-graph',
-        figure=px.bar(df, x="Nome do Representante", y="count"),
+        figure=px.bar(df, x="Nome do Representante", y="count", color_continuous_scale='Bluered'),
     ),
     html.Div([dcc.Graph(id='output_1'),
     ], style={'display': 'inline-block', 'width': '35%'}),
@@ -81,7 +81,7 @@ def display_hover_data(hoverData):
                    [frame].value_counts().reset_index()
         dff.columns = [frame, 'count']
         
-        figure = px.bar(dff, x=frame, y='count')
+        figure = px.bar(dff, y=frame, x='count', color_continuous_scale='Bluered')
         return figure
     
     # Return an empty figure if no hover data
