@@ -3,6 +3,7 @@
 '''
 
 from dash import Dash, html, dcc
+import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 import sqlite3 as s
@@ -13,13 +14,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-app = Dash(__name__, title="performance")
+app = Dash(__name__, title="performance", external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Declare server for Heroku deployment. Needed for Procfile.
 server = app.server
 
 # db connect
-db_con = s.connect('db_tubozan.db')
+db_con = s.connect('/private/var/root/devs/performance/db_tubozan.db')
 
 # Data
 data = {
@@ -36,36 +37,33 @@ conc = pd.read_sql_query("SELECT * from forms_conc", db_con)#pd.read_excel('http
 df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 
 
-# Layout with a graph and a div to display hover/click info
-app.layout = html.Div([
-    dcc.Graph(
-        id='example-graph',
 
-        figure=px.bar(df, x="Nome do Representante", y="count", color='count', color_continuous_scale='Bluered'),
-    ),
-    html.Div([dcc.Graph(id='output_1'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_2'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_3'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_4'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_5'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_6'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_7'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_8'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
-    html.Div([dcc.Graph(id='output_9'),
-    ], style={'display': 'inline-block', 'width': '35%'}),
+
+app.layout = dbc.Container([
     
+    dbc.Row([
+        dbc.Col([dcc.Graph(
+            id='example-graph',
+            figure=px.bar(df, x="Nome do Representante", y="count", color='count', color_continuous_scale='Bluered'),
+        ),], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_1')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_2')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_3')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_4')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
         
-    html.Div(id='click-output')
-])
+    ]),
+    dbc.Row([
+        dbc.Col([dcc.Graph(id='output_5')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_6')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_7')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_8')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_9')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        
+    ]),
 
+
+    
+])
 
 
 
