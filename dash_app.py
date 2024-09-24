@@ -5,6 +5,7 @@
 from dash import Dash, html, dcc
 import plotly.express as px
 import pandas as pd
+import sqlite3 as s
 
 from dash import dcc, html
 from dash.dependencies import Input, Output
@@ -17,6 +18,9 @@ app = Dash(__name__, title="performance")
 # Declare server for Heroku deployment. Needed for Procfile.
 server = app.server
 
+# db connect
+db_con = s.connect('db_tubozan.db')
+
 # Data
 data = {
     'Sector': ['Manager', 'Manager', 'Manager', 'Manager', 'Marketing', 'Marketing', 'Marketing','Vazio'],
@@ -28,7 +32,7 @@ tuples = [(source,target) for source, target in zip(data['Porque não efetuamos 
 datas['tuples'] = tuples
 
 
-conc = pd.read_pickle('https://github.com/arthbraveheart/performance/blob/main/conc_2.pkl')
+conc = pd.read_sql_query("SELECT * from forms_conc", con)#pd.read_excel('https://docs.google.com/spreadsheets/d/15PU9vOE6deEdFGEPAmeXGAJJBEYMhq4j/edit?usp=share_link&ouid=108398935028018525491&rtpof=true&sd=true', engine='openpyxl')
 df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 
 
