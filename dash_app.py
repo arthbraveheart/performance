@@ -32,7 +32,7 @@ tuples = [(source,target) for source, target in zip(data['Porque não efetuamos 
 datas['tuples'] = tuples
 
 
-conc = pd.read_sql_query("SELECT * from forms_conc", con)#pd.read_excel('https://docs.google.com/spreadsheets/d/15PU9vOE6deEdFGEPAmeXGAJJBEYMhq4j/edit?usp=share_link&ouid=108398935028018525491&rtpof=true&sd=true', engine='openpyxl')
+conc = pd.read_sql_query("SELECT * from forms_conc", db_con)#pd.read_excel('https://docs.google.com/spreadsheets/d/15PU9vOE6deEdFGEPAmeXGAJJBEYMhq4j/edit?usp=share_link&ouid=108398935028018525491&rtpof=true&sd=true', engine='openpyxl')
 df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 
 
