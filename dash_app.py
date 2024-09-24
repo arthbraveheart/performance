@@ -28,7 +28,7 @@ tuples = [(source,target) for source, target in zip(data['Porque não efetuamos 
 datas['tuples'] = tuples
 
 
-conc = pd.read_pickle('/private/var/root/Target/Pickles/conc_2.pkl')
+conc = pd.read_pickle('https://github.com/arthbraveheart/performance/blob/main/conc_2.pkl')
 df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
 
 
