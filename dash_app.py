@@ -20,7 +20,7 @@ app = Dash(__name__, title="performance", external_stylesheets=[dbc.themes.BOOTS
 server = app.server
 
 # db connect
-db_con = s.connect('/private/var/root/devs/performance/db_tubozan.db')
+db_con = s.connect('db_tubozan.db')
 
 # Data
 data = {
