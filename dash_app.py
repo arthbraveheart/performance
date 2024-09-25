@@ -32,40 +32,118 @@ datas = pd.DataFrame(data)
 tuples = [(source,target) for source, target in zip(data['Porque não efetuamos o Pedido?'],data['Sector'])]
 datas['tuples'] = tuples
 
-
+# forms
 conc = pd.read_sql_query("SELECT * from forms_conc", db_con)#pd.read_excel('https://docs.google.com/spreadsheets/d/15PU9vOE6deEdFGEPAmeXGAJJBEYMhq4j/edit?usp=share_link&ouid=108398935028018525491&rtpof=true&sd=true', engine='openpyxl')
-df = conc['Nome do Representante'].value_counts().to_frame().reset_index()
+df = conc['forms_name'].value_counts().to_frame().reset_index()
+
+# zona branca
+zb = pd.read_sql_query("SELECT * from z_b", db_con)
+
+# styling the sidebar
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "16rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
+
+# padding for the page content
+CONTENT_STYLE = {
+    "margin-left": "10rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
 
 
+# Top section - KPI cards
+top_kpi_cards = dbc.Row(
+    [
+        dbc.Col(dbc.Card(
+            dbc.CardBody([ 
+                html.H5("DVG Total", className="card-title"),
+                html.P("Value: 1000", className="card-text")
+            ])
+        ), width=3),
+        
+        dbc.Col(dbc.Card(
+            dbc.CardBody([
+                html.H5("Mucho", className="card-title"),
+                html.P("Value: 2000", className="card-text")
+            ])
+        ), width=3),
+        
+        dbc.Col(dbc.Card(
+            dbc.CardBody([
+                html.H5("Oportunidades", className="card-title"),
+                html.P("Value: 3000", className="card-text")
+            ])
+        ), width=3),
 
+        dbc.Col(dbc.Card(
+            dbc.CardBody([
+                html.H5("Enviados", className="card-title"),
+                html.P("Value: 4000", className="card-text")
+            ])
+        ), width=3),
+    ],
+    #className="mb-4",  # Add some margin at the bottom of the cards
+)
 
-app.layout = dbc.Container([
-    
+# Bottom section - Charts
+bottom_charts = dbc.Container([
     dbc.Row([
         dbc.Col([dcc.Graph(
             id='example-graph',
-            figure=px.bar(df, x="Nome do Representante", y="count", color='count', color_continuous_scale='Bluered'),
-        ),], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_1')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_2')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_3')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_4')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+            figure=px.bar(df, x="forms_name", y="count", color='count', color_continuous_scale='Bluered'),
+        )], width=12, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
         
     ]),
     dbc.Row([
-        dbc.Col([dcc.Graph(id='output_5')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_6')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_7')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_8')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_9')], width=6, style={'backgroundColor': '#F0F0F0', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_1')], width=6, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_9')], width=6, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
         
-    ]),
+],) ], fluid=True)
 
 
+content = html.Div([
+    top_kpi_cards,  # KPI cards row
+    bottom_charts   # Charts row
+], style=CONTENT_STYLE)
+
+
+
+
+sidebar = html.Div(
+    [
+        html.H3("Performance", className="display-4"),
+        html.Hr(),
+        html.P(
+            "Prospects", className="lead"
+        ),
+        dbc.Nav(
+            [
+                
+            ],
+            vertical=True,
+            pills=True,
+        ),
+    ],
+    style=SIDEBAR_STYLE,
+)
+
+content = html.Div(id="page-content", children=[
+          content,
+          ], style=CONTENT_STYLE)
+
+
+app.layout = html.Div([
     
-])
-
-
+    sidebar,
+    content
+], style={'backgroundColor': '#0c2563'})
 
 # 1 - Callback for hoverData 
 @app.callback(
@@ -73,151 +151,28 @@ app.layout = dbc.Container([
     [Input('example-graph', 'hoverData')]
 )
 def display_hover_data(hoverData):
-    frame = 'Porque não efetuamos o Pedido?'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, y=frame, x='count', color=frame ,color_continuous_scale='Bluered')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 2 - Callback for hoverData 
-@app.callback(
-    Output('output_2', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
     frame = 'Conhece alguma marca do GRUPO DVG'
+    legendd = 'Fez o pedido'
     if hoverData:
         hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
+        dff = conc.query("`forms_name` == @hovered_category") 
+        dff = dff.groupby([frame,legendd])[legendd].value_counts().to_frame().reset_index()
+                   
+        #dff.columns = [frame, 'count']
         
-        figure = px.bar(dff, x=frame, y='count')
+        #figure = px.bar(dff, x=frame, y='count', color = 'count', color_continuous_scale='Bluered')
+
+
+        figure = px.scatter(dff, x=frame, y="count",
+	             size="count", color=legendd,
+                   size_max=60)
+
+        
         return figure
     
     # Return an empty figure if no hover data
     return px.bar(title="Hover over a bar to see details.")
 
-# 3 - Callback for hoverData 
-@app.callback(
-    Output('output_3', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Porque parou de comprar?'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 4 - Callback for hoverData 
-@app.callback(
-    Output('output_4', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Já compou da TUBOZAN'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 5 - Callback for hoverData 
-@app.callback(
-    Output('output_5', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Regional do Representante'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 6 - Callback for hoverData 
-@app.callback(
-    Output('output_6', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Fez o pedido'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 7 - Callback for hoverData 
-@app.callback(
-    Output('output_7', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Qual concorrente?'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
-
-# 8 - Callback for hoverData 
-@app.callback(
-    Output('output_8', 'figure'),
-    [Input('example-graph', 'hoverData')]
-)
-def display_hover_data(hoverData):
-    frame = 'Já compou da TUBOZAN'
-    if hoverData:
-        hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        figure = px.bar(dff, x=frame, y='count')
-        return figure
-    
-    # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
 
 # 9 - Callback for hoverData 
 @app.callback(
@@ -228,7 +183,7 @@ def display_hover_data(hoverData):
     frame = 'Porque não efetuamos o Pedido?'
     if hoverData:
         hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`Nome do Representante` == @hovered_category") \
+        dff = conc.query("`forms_name` == @hovered_category") \
                    [frame].value_counts().reset_index()
         dff.columns = [frame, 'count']
         
@@ -269,7 +224,6 @@ def display_hover_data(hoverData):
     
     # Return an empty figure if no hover data
     return px.bar(title="Hover over a bar to see details.")
-
 
 
 if __name__ == '__main__':
