@@ -11,6 +11,9 @@ from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
+px.defaults.template = "plotly_dark"
+px.defaults.color_continuous_scale = px.colors.sequential.Blackbody
+
 
 app = Dash(__name__, title="performance", external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -50,6 +53,10 @@ SIDEBAR_STYLE = {
 
 # padding for the page content
 CONTENT_STYLE = {
+    #"position": "fixed",
+    "top": 0,
+    #"right": 0,
+    "bottom": 0,
     "margin-left": "10rem",
     "margin-right": "2rem",
     "padding": "2rem 1rem",
@@ -103,8 +110,8 @@ bottom_charts = dbc.Container([
         
     ]),
     dbc.Row([
-        dbc.Col([dcc.Graph(id='output_1')], width=6, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
-        dbc.Col([dcc.Graph(id='output_9')], width=6, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_1')], width=12, style={'backgroundColor': '#b2c5d6', 'padding': '10px'}),
+        dbc.Col([dcc.Graph(id='output_9')], width=12, style={'backgroundColor': '#0c2563', 'padding': '10px'}),
         
 ],) ], fluid=True)
 
@@ -156,7 +163,7 @@ app.layout = html.Div([
     
     sidebar,
     content
-], style={'backgroundColor': '#0c2563'})
+], style={'backgroundColor': '#0c2563'})#'#5485b3'})#'#0c2563'})
 
 
 # KPI Cards Callback
@@ -205,15 +212,20 @@ def display_hover_data(hoverData, value_1,value_2):
                     shared_yaxes=False, vertical_spacing=0.001)
 
         # Scatter plot trace
-        scatter_fig = px.scatter(dff, x=frame, y="count", size="count", color=legendd, size_max=60)
+        scatter_fig = px.scatter(dff, x=frame, y="count", size="count", color=legendd, size_max=60, )
         for trace in scatter_fig['data']:
             figure.add_trace(trace, row=1, col=1)
 
         # Pie chart trace
-        pie_fig = px.pie(dff, values='count', names=legendd, hole=0.5, title=legendd)
-        figure.add_trace(go.Pie(labels=pie_fig['data'][0]['labels'], values=pie_fig['data'][0]['values'], hole=0.5), row=1, col=2)
+        pie_fig = px.pie(dff, values='count', names=legendd, hole=0.5, title=legendd, )
+        
+        # Add pie trace from pie_fig (this includes the color_discrete_sequence)
+        for trace in pie_fig['data']:
+            figure.add_trace(trace, row=1, col=2)
+        #figure.add_trace(go.Pie(labels=pie_fig['data'][0]['labels'], values=pie_fig['data'][0]['values'], hole=0.5), row=1, col=2)
         figure.update_layout(
-                  title=frame)
+                  title_text=f"Comparing {frame} -> {legendd}", font_size=10, template='plotly_dark'
+         )
         return figure
     
     # Return an empty figure if no hover data
@@ -265,13 +277,11 @@ def display_hover_data(hoverData):
         ))
 
         # Set the title and display the figure
-        fig.update_layout(title_text="Tomada de decisão:<br>Porque não efetuamos o pedido?", font_size=10)
+        fig.update_layout(title_text="Tomada de decisão:<br>Porque não efetuamos o pedido?", font_size=10, template='plotly_dark')
         return fig
     
     # Return an empty figure if no hover data
     return px.bar(title="Hover over a bar to see details.")
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
