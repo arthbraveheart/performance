@@ -265,7 +265,7 @@ def display_hover_data(hoverData, value_1,value_2):
             figure.add_trace(trace, row=1, col=2)
         #figure.add_trace(go.Pie(labels=pie_fig['data'][0]['labels'], values=pie_fig['data'][0]['values'], hole=0.5), row=1, col=2)
         figure.update_layout(
-                  title_text=f"Comparing {frame} -> {legendd}", font_size=10, template='plotly_dark'
+                  title_text=f"Comparing {frame} -> {legendd}", font_size=10, template='plotly_dark', hovermode="x unified",
          )
         return figure
     
