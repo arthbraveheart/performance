@@ -7,10 +7,8 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 import sqlite3 as s
-
-from dash import dcc, html
+from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output
-import plotly.express as px
 import plotly.graph_objects as go
 
 
@@ -64,30 +62,33 @@ top_kpi_cards = dbc.Row(
         dbc.Col(dbc.Card(
             dbc.CardBody([ 
                 html.H5("DVG Total", className="card-title"),
-                html.P("Value: 1000", className="card-text")
+                html.H3(id='dvg_tot',children="", className="card-text")
             ])
         ), width=3),
         
         dbc.Col(dbc.Card(
             dbc.CardBody([
                 html.H5("Mucho", className="card-title"),
-                html.P("Value: 2000", className="card-text")
+                html.H3(id='mucho',children='', className="card-text")
             ])
         ), width=3),
         
         dbc.Col(dbc.Card(
             dbc.CardBody([
                 html.H5("Oportunidades", className="card-title"),
-                html.P("Value: 3000", className="card-text")
+                html.H3(id='opp',children='', className="card-text")
             ])
         ), width=3),
 
         dbc.Col(dbc.Card(
             dbc.CardBody([
                 html.H5("Enviados", className="card-title"),
-                html.P("Value: 4000", className="card-text")
+                html.H3(id='env',children='', className="card-text"),
+                
+                          
             ])
         ), width=3),
+        
     ],
     #className="mb-4",  # Add some margin at the bottom of the cards
 )
@@ -114,18 +115,30 @@ content = html.Div([
 ], style=CONTENT_STYLE)
 
 
+radio   = dcc.RadioItems(id='user_choice_1', options=[ {'label': 'Fez o Pedido?', "value": 'Fez o pedido'},
+                                                   {'label':'Loja Existe?','value':'Loja Existe'},
+                                                   {'label':'Já comprou da TUBOZAN?','value':'Já compou da TUBOZAN'}],
+                             value='Fez o pedido?', style={"color": "#0c2563"})
 
+
+drope   = dcc.Dropdown(id='user_choice_2', options=[ {'label': 'Diferença de Preço', "value": 'Diferença de Preço'},
+                                                   {'label':'Qual concorrente?','value':'Qual concorrente?'},
+                                                   {'label':'Tamanho','value':'Tamanho'},
+                                                   {'label':'Conhece alguma marca do GRUPO DVG','value':'Conhece alguma marca do GRUPO DVG'},
+                                                   {'label':'Porque parou de comprar?','value':'Porque parou de comprar?'},
+                                                   {'label':'Segmento da Loja','value':'Segmento da Loja'}],value='Diferença de Preço', style={"color": "#0c2563"})
 
 sidebar = html.Div(
-    [
-        html.H3("Performance", className="display-4"),
+    [   #html.Img(src='/private/var/root/Downloads/MUCHO%20LOGO%20positivo%20-%20Copia%20-%20Copia.png'),
+        html.H5("Performance", className="display-4", style={"width": "200px"}),
         html.Hr(),
         html.P(
             "Prospects", className="lead"
         ),
         dbc.Nav(
             [
-                
+               radio,
+               drope, 
             ],
             vertical=True,
             pills=True,
@@ -145,29 +158,62 @@ app.layout = html.Div([
     content
 ], style={'backgroundColor': '#0c2563'})
 
+
+# KPI Cards Callback
+@app.callback(
+    [Output('dvg_tot', 'children'),
+     Output('mucho', 'children'),
+     Output('opp', 'children'),
+     Output('env', 'children')],
+    [Input('example-graph', 'hoverData')]
+)
+def update_kpi_cards(hoverData):
+    cards = ['DVG Total', 'Mucho', 'oportunidades', 'Já passadas']
+    
+    if hoverData:
+        region_dict = {
+            'Norte': 'Região Norte',
+            'Nordeste': 'Região Nordeste',
+            'Sul': 'Região Sul',
+            'Minas': 'Região Sudeste',
+            'Centro Oeste': 'Região Centro-Oeste',
+        }
+        hovered_category = region_dict.get(hoverData['points'][0]['x'], 'Região Sudeste')
+        dff = zb.query("Regiao == @hovered_category")
+        totals = [dff[card].sum() for card in cards]
+    else:
+        totals = [zb[card].sum() for card in cards]
+    
+    return [f'{total}' for total in totals] 
+
+
 # 1 - Callback for hoverData 
 @app.callback(
     Output('output_1', 'figure'),
-    [Input('example-graph', 'hoverData')]
+    [Input('example-graph', 'hoverData'), Input('user_choice_1','value'), Input('user_choice_2','value')]
 )
-def display_hover_data(hoverData):
-    frame = 'Conhece alguma marca do GRUPO DVG'
-    legendd = 'Fez o pedido'
+def display_hover_data(hoverData, value_1,value_2):
+    frame = value_2
+    legendd = value_1
     if hoverData:
         hovered_category = hoverData['points'][0]['x']
         dff = conc.query("`forms_name` == @hovered_category") 
-        dff = dff.groupby([frame,legendd])[legendd].value_counts().to_frame().reset_index()
-                   
-        #dff.columns = [frame, 'count']
-        
-        #figure = px.bar(dff, x=frame, y='count', color = 'count', color_continuous_scale='Bluered')
+        dff = dff.groupby([frame, legendd])[legendd].value_counts().to_frame().reset_index()
 
+        # Create subplots with scatter and pie
+        figure = make_subplots(rows=1, cols=2, specs=[[{"type": "scatter"}, {"type": "pie"}]], shared_xaxes=True,
+                    shared_yaxes=False, vertical_spacing=0.001)
 
-        figure = px.scatter(dff, x=frame, y="count",
-	             size="count", color=legendd,
-                   size_max=60)
+        # Scatter plot trace
+        scatter_fig = px.scatter(dff, x=frame, y="count", size="count", color=legendd, size_max=60)
+        for trace in scatter_fig['data']:
+            figure.add_trace(trace, row=1, col=1)
 
-        
+        # Pie chart trace
+        pie_fig = px.pie(dff, values='count', names=legendd, hole=0.5, title=legendd)
+        figure.add_trace(go.Pie(labels=pie_fig['data'][0]['labels'], values=pie_fig['data'][0]['values'], hole=0.5), row=1, col=2)
+        figure.update_layout(
+                  title=frame)
         return figure
     
     # Return an empty figure if no hover data
@@ -219,11 +265,12 @@ def display_hover_data(hoverData):
         ))
 
         # Set the title and display the figure
-        fig.update_layout(title_text="Tomada de decisão", font_size=10)
+        fig.update_layout(title_text="Tomada de decisão:<br>Porque não efetuamos o pedido?", font_size=10)
         return fig
     
     # Return an empty figure if no hover data
     return px.bar(title="Hover over a bar to see details.")
+
 
 
 if __name__ == '__main__':
