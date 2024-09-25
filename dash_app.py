@@ -23,19 +23,20 @@ server = app.server
 # db connect
 db_con = s.connect('db_tubozan.db')
 
+
 # Data
 data = {
     'Sector': ['Manager', 'Manager', 'Manager', 'Manager', 'Marketing', 'Marketing', 'Marketing','Vazio'],
     'Porque não efetuamos o Pedido?': ['Preço', 'Atendimento', 'Fidelidade com concorrente', 'Pazo de entrega', 
               'Inicio de Relacionamento', 'Variedade de produtos', 'Qualidade do produto','vazio']
 }
-datas = pd.DataFrame(data)
-tuples = [(source,target) for source, target in zip(data['Porque não efetuamos o Pedido?'],data['Sector'])]
+datas           = pd.DataFrame(data)
+tuples          = [(source,target) for source, target in zip(data['Porque não efetuamos o Pedido?'],data['Sector'])]
 datas['tuples'] = tuples
 
 # forms
 conc = pd.read_sql_query("SELECT * from forms_conc", db_con)#pd.read_excel('https://docs.google.com/spreadsheets/d/15PU9vOE6deEdFGEPAmeXGAJJBEYMhq4j/edit?usp=share_link&ouid=108398935028018525491&rtpof=true&sd=true', engine='openpyxl')
-df = conc['forms_name'].value_counts().to_frame().reset_index()
+df   = conc['forms_name'].value_counts().to_frame().reset_index()
 
 # zona branca
 zb = pd.read_sql_query("SELECT * from z_b", db_con)
@@ -158,7 +159,47 @@ content = html.Div(id="page-content", children=[
           content,
           ], style=CONTENT_STYLE)
 
+#---------- Figures --------------#
 
+def san_key(data_f,f_frame):
+        
+        selected = set(data_f.loc[:,f_frame].to_list())
+        dt       = datas.query(" `Porque não efetuamos o Pedido?` in @selected ")
+        weights  = data_f.set_index(f_frame).to_dict()
+        #weights  = dt.loc[:,'Porque não efetuamos o Pedido?'].value_counts()
+        # Create a mapping for the unique labels
+        labels   = list(set(dt['Sector'].to_list() + dt['Porque não efetuamos o Pedido?'].to_list()))
+
+        # Map sectors and issues to their respective indices
+        label_map = {label: i for i, label in enumerate(labels)}
+        map_label = {i:label for i, label in enumerate(labels)}
+        # Create the Sankey diagram data
+        source_indices = [label_map[sector] for sector in dt['Sector']]
+        target_indices = [label_map[issue] for issue in dt['Porque não efetuamos o Pedido?']]
+        values         = [weights['count'][map_label[target]] for target in target_indices]#[1] * len(source_indices)
+
+        # Create the Sankey chart
+        fig = go.Figure(go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                label=labels,
+            ),
+            link=dict(
+                source=source_indices,
+                target=target_indices,
+                value=values
+            )
+        ))
+
+        # Set the title and display the figure
+        fig.update_layout(title_text="Tomada de decisão:<br>Porque não efetuamos o pedido?", font_size=10, template='plotly_dark')
+        return fig
+
+    
+
+#---------- LAYOUT --------------#
 app.layout = html.Div([
     
     sidebar,
@@ -241,47 +282,17 @@ def display_hover_data(hoverData):
     frame = 'Porque não efetuamos o Pedido?'
     if hoverData:
         hovered_category = hoverData['points'][0]['x']
-        dff = conc.query("`forms_name` == @hovered_category") \
-                   [frame].value_counts().reset_index()
-        dff.columns = [frame, 'count']
-        
-        selected = set(dff.loc[:,frame].to_list())
-        dt     = datas.query(" `Porque não efetuamos o Pedido?` in @selected ")
-        
-        # Create a mapping for the unique labels
-        labels = list(set(dt['Sector'].to_list() + dt['Porque não efetuamos o Pedido?'].to_list()))
-
-        # Map sectors and issues to their respective indices
-        label_map = {label: i for i, label in enumerate(labels)}
-
-        # Create the Sankey diagram data
-        source_indices = [label_map[sector] for sector in dt['Sector']]
-        target_indices = [label_map[issue] for issue in dt['Porque não efetuamos o Pedido?']]
-
-        # Assign default values for the links
-        values = [1] * len(source_indices)
-
-        # Create the Sankey chart
-        fig = go.Figure(go.Sankey(
-            node=dict(
-                pad=15,
-                thickness=20,
-                line=dict(color="black", width=0.5),
-                label=labels,
-            ),
-            link=dict(
-                source=source_indices,
-                target=target_indices,
-                value=values
-            )
-        ))
-
-        # Set the title and display the figure
-        fig.update_layout(title_text="Tomada de decisão:<br>Porque não efetuamos o pedido?", font_size=10, template='plotly_dark')
-        return fig
+        dff              = conc.query("`forms_name` == @hovered_category") \
+                                [frame].value_counts().reset_index()
+        dff.columns      = [frame, 'count']        
+        fig              = san_key(dff,frame)
+    else:
+        dff              = conc[frame].value_counts().reset_index() #without query
+        dff.columns      = [frame, 'count']        
+        fig              = san_key(dff,frame)
     
     # Return an empty figure if no hover data
-    return px.bar(title="Hover over a bar to see details.")
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
