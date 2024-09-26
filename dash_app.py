@@ -125,7 +125,7 @@ content = html.Div([
 
 radio   = dcc.RadioItems(id='user_choice_1', options=[ {'label': 'Fez o Pedido?', "value": 'Fez o pedido'},
                                                    {'label':'Loja Existe?','value':'Loja Existe'},
-                                                   {'label':'Já comprou da TUBOZAN?','value':'Já compou da TUBOZAN'}],
+                                                   {'label':'Já comprou da TUBOZAN?','value':'Já comprou da TUBOZAN'}],
                              value='Fez o pedido?', style={"color": "#0c2563"})
 
 
@@ -252,21 +252,68 @@ def display_hover_data(hoverData, value_1,value_2):
         figure = make_subplots(rows=1, cols=2, specs=[[{"type": "scatter"}, {"type": "pie"}]], shared_xaxes=True,
                     shared_yaxes=False, vertical_spacing=0.001)
 
-        # Scatter plot trace
-        scatter_fig = px.scatter(dff, x=frame, y="count", size="count", color=legendd, size_max=60, )
-        for trace in scatter_fig['data']:
-            figure.add_trace(trace, row=1, col=1)
 
-        # Pie chart trace
-        pie_fig = px.pie(dff, values='count', names=legendd, hole=0.5, title=legendd, )
+
+        color_map = {
+                        "Sim": px.colors.qualitative.Plotly[0],
+                        "Não": px.colors.qualitative.Plotly[1],
+                        "vazio": px.colors.qualitative.Plotly[2],
+                    }
+        # Adjust marker sizes for bubbles (you can adjust the factor for better visualization)
+        bubble_size_factor = 20
+
+        # Group the data by the x-axis value and create a hover text that combines all bubbles for the same x value
+        hover_texts = dff.groupby(frame).apply(
+            lambda group: "<br>".join([f"{legendd}: {val}, Count: {cnt}" for val, cnt in zip(group[legendd], group['count'])])
+        ).reindex(dff[frame])
         
-        # Add pie trace from pie_fig (this includes the color_discrete_sequence)
-        for trace in pie_fig['data']:
-            figure.add_trace(trace, row=1, col=2)
-        #figure.add_trace(go.Pie(labels=pie_fig['data'][0]['labels'], values=pie_fig['data'][0]['values'], hole=0.5), row=1, col=2)
+        # Scatter plot trace using go.Scatter with consistent hover and size
+        scatter_trace = go.Scatter(
+            x=dff[frame],
+            y=dff['count'],
+            mode='markers',
+            marker=dict(
+                size=dff['count'] * bubble_size_factor,  # Bubble size
+                color=[color_map[val] for val in dff[legendd]],  # Color based on category
+                sizemode='area',  # Size bubbles by area for better proportionality
+                sizeref=max(dff['count']) / 100,  # Adjust size reference for better scaling
+                sizemin=5  # Minimum bubble size
+            ),
+            text=hover_texts,#[f"{legendd}: {val}<br>Count: {cnt}" for val, cnt in zip(dff[legendd], dff['count'])],  # Custom hover text
+            hoverinfo='text',  # Show custom hover info
+            showlegend=False
+        )
+        
+        # Pie chart trace using go.Pie with hover and legend control
+        pie_trace = go.Pie(
+            labels=dff[legendd],
+            values=dff['count'],
+            hole=0.5,
+            marker=dict(colors=[color_map[val] for val in dff[legendd]]),
+            textinfo='label+percent',  # Show label and percentage on pie
+            hoverinfo='label+value',  # Show category and count on hover
+            showlegend=True  # Keep the legend visible for the pie chart
+        )
+        
+        # Add traces to the figure
+        figure.add_trace(scatter_trace, row=1, col=1)
+        figure.add_trace(pie_trace, row=1, col=2)
+        
+        # Update layout and background
         figure.update_layout(
-                  title_text=f"Comparing {frame} -> {legendd}", font_size=10, template='plotly_dark', hovermode="x unified",
-         )
+            title_text=f"Comparing {frame} -> {legendd}",
+            font_size=10,
+            template='plotly_dark',  # This sets the dark background
+            hovermode="x unified",  # Consistent hover behavior
+            #paper_bgcolor="rgba(0, 0, 0, 0)",  # Transparent background
+            #plot_bgcolor="rgba(0, 0, 0, 0)",   # Transparent plot background
+            legend=dict(
+                title=legendd,  # Make the legend title consistent with the category
+                x=1.05,  # Place the legend outside of the graph
+                y=1
+            )
+        )
+        
         return figure
     
     # Return an empty figure if no hover data
